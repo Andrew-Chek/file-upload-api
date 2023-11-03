@@ -16,12 +16,48 @@ const storage = multer.diskStorage({
   
 const upload = multer({ storage: storage })
 
-app.post("/uploads", upload.array("files"), (req, res) => {
+app.post("/uploadFiles", upload.array("files"), (req, res) => {
 
-    console.log(req.body);
     console.log(req.files);
     res.json({ message: "File(s) uploaded successfully" });
 
+});
+
+app.get("/uploadedFiles", (req, res) => {
+
+    const fs = require('fs');
+    const path = require('path');
+
+    const directoryPath = path.join(__dirname, 'uploads');
+
+    fs.readdir(directoryPath, function (err, fileNames) {
+        if (err) {
+            return res.status(500).send('Unable to scan directory: ' + err);
+        } 
+
+        res.json({ fileNames });
+    });
+
+});
+
+app.delete('deleteFiles', (req, res) => {
+    
+        const fs = require('fs');
+        const path = require('path');
+    
+        const directoryPath = path.join(__dirname, 'uploads');
+    
+        fs.readdir(directoryPath, function (err, files) {
+            if (err) {
+                return res.status(500).send('Unable to scan directory: ' + err);
+            } 
+    
+            files.forEach(function (file) {
+                fs.unlinkSync(directoryPath + '/' + file);
+            });
+    
+            res.json({ message: "Files deleted successfully" });
+        });
 });
 
 app.listen(5000, function(){
