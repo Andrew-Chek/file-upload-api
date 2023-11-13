@@ -1,65 +1,42 @@
 const express = require("express");
-const multer = require('multer');
 const cors = require('cors');
-
 const app = express();
+const http = require('http');
+
+const { uploadRouter } = require('./uploadService/uploadRouter.js');
+
 app.use(cors());
+app.use(express.json());
 
-const storage = multer.diskStorage({
-    destination: function (req, file, callback) {
-        callback(null, __dirname + '/uploads');
-    },
-    filename: function (req, file, callback) {
-        callback(null, file.originalname);
-    }
-})
-  
-const upload = multer({ storage: storage })
+app.use('/api/upload', uploadRouter);
 
-app.post("/uploadFiles", upload.array("files"), (req, res) => {
+app.use(errorHandler);
 
-    console.log(req.files);
-    res.json({ message: "File(s) uploaded successfully" });
+const server = http.createServer(app);
 
-});
+const PORT = 5000;
 
-app.get("/uploadedFiles", (req, res) => {
-
-    const fs = require('fs');
-    const path = require('path');
-
-    const directoryPath = path.join(__dirname, 'uploads');
-
-    fs.readdir(directoryPath, function (err, fileNames) {
-        if (err) {
-            return res.status(500).send('Unable to scan directory: ' + err);
-        } 
-
-        res.json({ fileNames });
-    });
-
-});
-
-app.delete('deleteFiles', (req, res) => {
-    
-        const fs = require('fs');
-        const path = require('path');
-    
-        const directoryPath = path.join(__dirname, 'uploads');
-    
-        fs.readdir(directoryPath, function (err, files) {
-            if (err) {
-                return res.status(500).send('Unable to scan directory: ' + err);
-            } 
-    
-            files.forEach(function (file) {
-                fs.unlinkSync(directoryPath + '/' + file);
-            });
-    
-            res.json({ message: "Files deleted successfully" });
+const start = async () => {
+	try {
+		server.listen(PORT, () => {
+            console.log(`server started on port ${PORT}`);
         });
-});
+	} catch (err) {
+		console.error(`Error on server startup: ${err.message}`);
+	}
+}
 
-app.listen(5000, function(){
-    console.log("Server running on port 5000");
-});
+
+start();
+
+function errorHandler(err, req, res, next) {
+  console.error(err);
+  if(err != null)
+  {
+    res.status(400).send({ message: err.message });
+  }
+  else
+  {
+    res.status(500).send({ message: 'Server error' });
+  }
+}
